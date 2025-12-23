@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SIX | Colección de afiches</title>
+
+    <!-- 1. FUENTES -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 2. ICONOS -->
+    <link href="https://cdn.jsdelivr.net/npm/dflip/css/themify-icons.min.css" rel="stylesheet" type="text/css">
+
+    <style>
+        /* --- CONFIGURACIÓN VISUAL --- */
+        :root {
+            --bg-color: #050505;      
+            --accent-color: #dc6b2f;  
+            --text-main: #FFFFFF;     
+        }
+
+        body, html {
+            height: 100%; margin: 0;
+            background-color: var(--bg-color);
+            font-family: 'Archivo', sans-serif !important;
+            overflow: hidden;
+            
+            /* Bloqueamos selección global en la interfaz */
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        /* --- FONDO DE RUIDO --- */
+        #grained-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- VISOR OPENSEADRAGON --- */
+        #openseadragon-viewer {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+            opacity: 0; /* Fade in controlado */
+            transition: opacity 0.5s ease;
+        }
+
+        /* --- CONTADOR DE PAGINAS --- */
+        #page-counter {
+            position: fixed;
+            bottom: 80px; 
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 11px;
+            letter-spacing: 2px;
+            z-index: 20;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        /* Título del Afiche actual */
+        #poster-title {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text-main);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 20;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            opacity: 0.8;
+            pointer-events: none;
+            text-align: center;
+            width: 90%;
+        }
+
+        /* --- BARRA DE HERRAMIENTAS (INVISIBLE) --- */
+        #custom-toolbar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            backdrop-filter: none !important;
+            
+            padding: 0;
+            gap: 25px; 
+        }
+
+        .custom-btn {
+            background: transparent;
+            border: none;
+            color: #AAAAAA; 
+            cursor: pointer;
+            width: auto; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0; outline: none;
+        }
+
+        .custom-btn i { font-size: 20px; line-height: 1; display: block; font-weight: normal; }
+        
+        #btn-info i { font-size: 17px; position: relative; top: -1px; }
+
+        .custom-btn:hover, .custom-btn.active {
+            color: var(--accent-color);
+            transform: scale(1.2);
+            text-shadow: 0 0 15px rgba(220, 107, 47, 0.6);
+        }
+
+        .custom-btn.disabled {
+            color: #333;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        /* --- MODAL INFO --- */
+        .modal-overlay {
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.96); 
+            z-index: 10000; 
+            justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+
+        .modal-content {
+            color: #fff; max-width: 500px; width: 80%;
+            text-align: center; position: relative;
+            
+            /* PERMITIR SELECCIÓN DE TEXTO */
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: auto;
+        }
+        
+        .modal-line { width: 40px; height: 2px; background-color: var(--accent-color); margin: 20px auto; }
+        .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; }
+        .modal-subtitle { font-size: 11px; color: var(--accent-color); margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+        .modal-body { font-size: 14px; color: #ccc; line-height: 1.6; font-weight: 300; }
+        .modal-credits { margin-top: 25px; font-weight: 600; font-size: 15px; color: #fff; letter-spacing: 1px; }
+        .modal-note { margin-top: 30px; font-size: 10px; color: #666; border-top: 1px solid #222; padding-top: 15px; }
+        
+        .close-modal { 
+            position: absolute; top: -50px; right: 0; 
+            color: #666; font-size: 30px; cursor: pointer; 
+            transition: 0.2s; font-weight: 100;
+            user-select: none !important; 
+        }
+        .close-modal:hover { color: var(--accent-color); }
+
+    </style>
+</head>
+<body>
+
+    <!-- FONDO DE RUIDO -->
+    <div id="grained-container"></div>
+
+    <!-- MODAL DE INFORMACIÓN -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="toggleInfo()">✕</span>
+            
+            <div class="modal-title">THE SIX</div>
+            <div class="modal-subtitle">SERIE DE AFICHES</div>
+            
+            <div class="modal-line"></div>
+            
+            <div class="modal-body">
+                <p>DIRECCIÓN DE ARTE, CONCEPTUALIZACIÓN,<br>DISEÑO GRÁFICO E ILUSTRACIÓN</p>
+                
+                <div class="modal-credits">
+                    Joaquin Max Cuevas Ventura
+                </div>
+                <p style="font-size: 12px; margin-top: 5px; color: #888;">2015 - 2023</p>
+
+                <div class="modal-note">
+                    Nota: Serie desarrollada en mi rol como diseñador y miembro de THE SIX. Los afiches fueron creados para promover los conciertos y presentaciones de la banda como proyecto cultural.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI INFORMACIÓN -->
+    <div id="poster-title">Cargando...</div>
+    <div id="page-counter">00 / 00</div>
+
+    <!-- BARRA DE HERRAMIENTAS -->
+    <div id="custom-toolbar">
+        <button class="custom-btn" id="btn-prev" title="Anterior"><i class="ti-arrow-left"></i></button>
+        <button class="custom-btn" id="btn-zoom-in" title="Acercar"><i class="ti-zoom-in"></i></button>
+        <button class="custom-btn" id="btn-zoom-out" title="Alejar"><i class="ti-zoom-out"></i></button>
+        <button class="custom-btn" id="btn-full" title="Pantalla Completa"><i class="ti-fullscreen"></i></button>
+        <button class="custom-btn" id="btn-info" title="Información"><i class="ti-info-alt"></i></button>
+        <button class="custom-btn" id="btn-next" title="Siguiente"><i class="ti-arrow-right"></i></button>
+    </div>
+
+    <!-- VISOR -->
+    <div id="openseadragon-viewer"></div>
+
+    <!-- SCRIPTS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/grained/0.0.2/grained.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
+
+    <script>
+        // --- 1. DATOS DE LOS AFICHES ---
+        var posters = [
+            { file: "almatroste.jpg", title: "Almatroste: Sesión TV" },
+            { file: "calderas_roja.jpg", title: "Rock Calderas: El Refugio" },
+            { file: "calderas_vol2.jpg", title: "Rock Calderas Vol. II" },
+            { file: "calderas_who.jpg", title: "Calderas: Who The F*ck?" },
+            { file: "el_bunker_ep.jpg", title: "El Bunker: Primer EP" },
+            { file: "el_bunker_opening.jpg", title: "El Bunker: Opening" },
+            { file: "feria_mil_colores.jpg", title: "Feria de Mil Colores" },
+            { file: "feria_prado_boca.jpg", title: "Feria del Prado: The Six" },
+            { file: "feria_tribus.jpg", title: "Feria: Tribus Urbanas" },
+            { file: "la_caverna.jpg", title: "La Caverna Pub" },
+            { file: "megafest.jpg", title: "MegaFest 2016" },
+            { file: "museo_revolucion.jpg", title: "Museo de la Revolución" },
+            { file: "old_time_cafe.jpg", title: "Old Time Café Pub" }
+        ];
+
+        var currentIndex = 0;
+        var viewer;
+
+        // --- 2. CONFIGURACIÓN VISUAL ---
+        try {
+            grained('#grained-container', {
+                "animate": true, "patternWidth": 100, "patternHeight": 100,
+                "grainOpacity": 0.05, "grainDensity": 1, "grainWidth": 1, "grainHeight": 1
+            });
+        } catch(e) { console.log("Error grano"); }
+
+        // --- 3. INICIALIZAR VIEWER ---
+        function initViewer() {
+            viewer = OpenSeadragon({
+                id: "openseadragon-viewer",
+                prefixUrl: "", 
+                showNavigationControl: false, 
+                wrapHorizontal: false,
+                visibilityRatio: 1.0, 
+                minZoomImageRatio: 0.8,
+                maxZoomPixelRatio: 5, 
+                animationTime: 0.5,
+                tileSources: {
+                    type: 'image',
+                    url: posters[currentIndex].file
+                }
+            });
+
+            // Lógica de carga y precarga
+            viewer.addHandler('open', function() {
+                // Actualizar título solo cuando la imagen realmente cargó
+                document.getElementById('poster-title').innerText = posters[currentIndex].title;
+                document.getElementById('openseadragon-viewer').style.opacity = '1';
+                
+                // EJECUTAR PRECARGA INTELIGENTE
+                preloadImages(currentIndex);
+            });
+
+            updateUI();
+        }
+
+        // --- 4. FUNCIÓN DE PRECARGA (OPTIMIZACIÓN) ---
+        function preloadImages(index) {
+            // Cargar Siguiente (si existe)
+            if (index + 1 < posters.length) {
+                var imgNext = new Image();
+                imgNext.src = posters[index + 1].file;
+            }
+            // Cargar Anterior (si existe)
+            if (index - 1 >= 0) {
+                var imgPrev = new Image();
+                imgPrev.src = posters[index - 1].file;
+            }
+        }
+
+        // --- 5. NAVEGACIÓN ---
+        function loadPoster(index) {
+            if (index < 0 || index >= posters.length) return;
+            
+            // Indicador visual de carga
+            document.getElementById('poster-title').innerText = "CARGANDO...";
+            
+            currentIndex = index;
+            viewer.open({ type: 'image', url: posters[currentIndex].file });
+            updateUI();
+        }
+
+        function updateUI() {
+            var currentNum = (currentIndex + 1).toString().padStart(2, '0');
+            var totalNum = posters.length.toString().padStart(2, '0');
+            document.getElementById('page-counter').innerText = currentNum + " / " + totalNum;
+            
+            document.getElementById('btn-prev').classList.toggle('disabled', currentIndex === 0);
+            document.getElementById('btn-next').classList.toggle('disabled', currentIndex === posters.length - 1);
+        }
+
+        // --- 6. EVENTOS ---
+        document.addEventListener("DOMContentLoaded", function() { initViewer(); });
+        
+        document.getElementById('btn-next').addEventListener('click', function() { loadPoster(currentIndex + 1); });
+        document.getElementById('btn-prev').addEventListener('click', function() { loadPoster(currentIndex - 1); });
+        
+        document.getElementById('btn-zoom-in').addEventListener('click', function() { 
+            if(viewer.viewport) viewer.viewport.zoomTo(viewer.viewport.getZoom() * 1.5); 
+        });
+        document.getElementById('btn-zoom-out').addEventListener('click', function() { 
+            if(viewer.viewport) viewer.viewport.zoomTo(viewer.viewport.getZoom() / 1.5); 
+        });
+        document.getElementById('btn-full').addEventListener('click', function() { 
+            if(viewer) viewer.setFullScreen(!viewer.isFullScreen()); 
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "ArrowRight") loadPoster(currentIndex + 1);
+            if (e.key === "ArrowLeft") loadPoster(currentIndex - 1);
+            if (e.key === "+" || e.key === "=") document.getElementById('btn-zoom-in').click();
+            if (e.key === "-") document.getElementById('btn-zoom-out').click();
+            if (e.key === "Escape") toggleInfo();
+        });
+
+        function toggleInfo() {
+            var modal = document.getElementById('infoModal');
+            var btn = document.getElementById('btn-info');
+            if (modal.classList.contains('show')) {
+                modal.classList.remove('show');
+                setTimeout(function() { modal.style.display = 'none'; }, 300); 
+                btn.classList.remove('active');
+            } else {
+                modal.style.display = 'flex';
+                setTimeout(function() { modal.classList.add('show'); }, 10);
+                btn.classList.add('active');
+            }
+        }
+        document.getElementById('btn-info').onclick = toggleInfo;
+        window.onclick = function(event) { if (event.target == document.getElementById('infoModal')) toggleInfo(); }
+    </script>
+</body>
+</html>
